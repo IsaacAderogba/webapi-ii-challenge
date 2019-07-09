@@ -10,8 +10,8 @@ router.post("/", async (req, res) => {
   if (title && contents) {
     try {
       const response = await Posts.insert({ title, contents });
-      // add logic to find created post
-      res.status(201).json(response);
+      const foundPost = await getPostById(response.id);
+      res.status(201).json(foundPost);
     } catch {
       res.status(500).json({
         errorMessage: "There was an error while saving the post to the database"
@@ -52,8 +52,24 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.get("/:id/comments", (req, res) => {
-  res.json("Get api/posts/:id/comments");
+router.get("/:id/comments", async (req, res) => {
+  const response = await getPostById(req.params.id);
+  if (response.length > 0) {
+    try {
+        const foundComments = await Posts.findPostComments(req.params.id)
+        if(foundComments.length > 0) {
+            res.status(200).json(foundComments);
+        } else {
+            res.status(404).json({errorMessage: "No comments exist for this post"})
+        }
+    } catch {
+        res.status(500).json({errorMessage: "The comments information could not be retrieved"})
+    }
+  } else {
+    res
+      .status(404)
+      .json({ errorMessage: "The post with the specified ID does not exist." });
+  }
 });
 
 // DELETE
@@ -66,7 +82,7 @@ router.put("/:id", (req, res) => {
   res.json("update api/posts/ by id");
 });
 
-// get post by ID helper method
+// HELPER FUNCTIONS
 const getPostById = async id => {
   try {
     return await Posts.findById(id);
@@ -77,6 +93,5 @@ const getPostById = async id => {
   }
 };
 
-// check if object is empty helper method
 
 module.exports = router;
