@@ -24,9 +24,38 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.post("/:id/comments", (req, res) => {
-  const { id } = req.params.id;
-  // do get logic first
+router.post("/:id/comments", async (req, res) => {
+  const { text } = req.body;
+  const postId = req.params.id;
+
+  if (text) {
+    const foundPost = await getPostById(postId);
+    if (foundPost) {
+      try {
+        const response = await Posts.insertComment({
+          text: text,
+          post_id: postId
+        });
+        const foundComment = await Posts.findCommentById(response.id);
+        res.status(200).json(foundComment);
+      } catch {
+        res
+          .status(500)
+          .json({
+            errorMessage:
+              "There was an error while saving the comment to the database"
+          });
+      }
+    } else {
+      res.status(404).json({
+        errorMessage: "The post with the specified ID does not exist"
+      });
+    }
+  } else {
+    res
+      .status(400)
+      .json({ errorMessage: "Please provide text for the comment" });
+  }
 });
 
 // GET
@@ -56,14 +85,18 @@ router.get("/:id/comments", async (req, res) => {
   const response = await getPostById(req.params.id);
   if (response.length > 0) {
     try {
-        const foundComments = await Posts.findPostComments(req.params.id)
-        if(foundComments.length > 0) {
-            res.status(200).json(foundComments);
-        } else {
-            res.status(404).json({errorMessage: "No comments exist for this post"})
-        }
+      const foundComments = await Posts.findPostComments(req.params.id);
+      if (foundComments.length > 0) {
+        res.status(200).json(foundComments);
+      } else {
+        res
+          .status(404)
+          .json({ errorMessage: "No comments exist for this post" });
+      }
     } catch {
-        res.status(500).json({errorMessage: "The comments information could not be retrieved"})
+      res.status(500).json({
+        errorMessage: "The comments information could not be retrieved"
+      });
     }
   } else {
     res
@@ -92,6 +125,5 @@ const getPostById = async id => {
       .json({ errorMessage: "The post information could not be retrieved." });
   }
 };
-
 
 module.exports = router;
