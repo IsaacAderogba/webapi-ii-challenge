@@ -30,7 +30,7 @@ router.post("/:id/comments", async (req, res) => {
 
   if (text) {
     const foundPost = await getPostById(postId);
-    if (foundPost) {
+    if (foundPost.length > 0) {
       try {
         const response = await Posts.insertComment({
           text: text,
@@ -39,12 +39,10 @@ router.post("/:id/comments", async (req, res) => {
         const foundComment = await Posts.findCommentById(response.id);
         res.status(200).json(foundComment);
       } catch {
-        res
-          .status(500)
-          .json({
-            errorMessage:
-              "There was an error while saving the comment to the database"
-          });
+        res.status(500).json({
+          errorMessage:
+            "There was an error while saving the comment to the database"
+        });
       }
     } else {
       res.status(404).json({
@@ -106,8 +104,28 @@ router.get("/:id/comments", async (req, res) => {
 });
 
 // DELETE
-router.delete("/:id", (req, res) => {
-  res.json("delete api/posts/ by id");
+router.delete("/:id", async (req, res) => {
+  const foundPost = await getPostById(req.params.id);
+  if (foundPost.length > 0) {
+    try {
+      const response = await Posts.remove(req.params.id);
+      if (response) {
+        res.status(200).json(foundPost);
+      } else {
+        res
+          .status(404)
+          .json({
+            errorMessage: "The post with the specified ID does not exist."
+          });
+      }
+    } catch {
+      res.status(500).json({ errorMessage: "The post could not be removed" });
+    }
+  } else {
+    res
+      .status(404)
+      .json({ errorMessage: "The post with the specified ID does not exist." });
+  }
 });
 
 // PUT
@@ -115,7 +133,7 @@ router.put("/:id", (req, res) => {
   res.json("update api/posts/ by id");
 });
 
-// HELPER FUNCTIONS
+// HELPERS
 const getPostById = async id => {
   try {
     return await Posts.findById(id);
