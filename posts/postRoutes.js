@@ -1,11 +1,23 @@
 const express = require("express");
 const router = express.Router();
+const Posts = require('../data/db')
 
 // api/posts is the root
 
 // POST
-router.post("/", (req, res) => {
-  res.json("post api/posts/");
+router.post("/", async (req, res) => {
+  const { title, contents } = req.body;
+  if(title && contents) {
+    try {
+        const response = await Posts.insert({title, contents});
+        // add logic to find created post
+        res.status(201).json(response);
+    } catch (err) {
+        res.status(500).json({errorMessage: "There was an error while saving the post to the database"})
+    }
+  } else {
+      res.status(400).json({errorMessage: "Please provide title and contents for the post."})
+  }
 });
 
 router.post("/:id/comments", (req, res) => {
