@@ -12,20 +12,15 @@ router.post("/", async (req, res) => {
       const response = await Posts.insert({ title, contents });
       // add logic to find created post
       res.status(201).json(response);
-    } catch (err) {
-      res
-        .status(500)
-        .json({
-          errorMessage:
-            "There was an error while saving the post to the database"
-        });
+    } catch {
+      res.status(500).json({
+        errorMessage: "There was an error while saving the post to the database"
+      });
     }
   } else {
-    res
-      .status(400)
-      .json({
-        errorMessage: "Please provide title and contents for the post."
-      });
+    res.status(400).json({
+      errorMessage: "Please provide title and contents for the post."
+    });
   }
 });
 
@@ -46,8 +41,15 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.get("/:id", (req, res) => {
-  res.json("Get api/posts by id");
+router.get("/:id", async (req, res) => {
+  const response = await getPostById(req.params.id);
+  if (response.length > 0) {
+    res.status(200).json(response);
+  } else {
+    res
+      .status(404)
+      .json({ errorMessage: "The post with the specified ID does not exist." });
+  }
 });
 
 router.get("/:id/comments", (req, res) => {
@@ -63,5 +65,18 @@ router.delete("/:id", (req, res) => {
 router.put("/:id", (req, res) => {
   res.json("update api/posts/ by id");
 });
+
+// get post by ID helper method
+const getPostById = async id => {
+  try {
+    return await Posts.findById(id);
+  } catch {
+    res
+      .status(500)
+      .json({ errorMessage: "The post information could not be retrieved." });
+  }
+};
+
+// check if object is empty helper method
 
 module.exports = router;
