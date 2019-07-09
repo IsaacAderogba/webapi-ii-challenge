@@ -112,11 +112,9 @@ router.delete("/:id", async (req, res) => {
       if (response) {
         res.status(200).json(foundPost);
       } else {
-        res
-          .status(404)
-          .json({
-            errorMessage: "The post with the specified ID does not exist."
-          });
+        res.status(404).json({
+          errorMessage: "The post with the specified ID does not exist."
+        });
       }
     } catch {
       res.status(500).json({ errorMessage: "The post could not be removed" });
@@ -129,8 +127,32 @@ router.delete("/:id", async (req, res) => {
 });
 
 // PUT
-router.put("/:id", (req, res) => {
-  res.json("update api/posts/ by id");
+router.put("/:id", async (req, res) => {
+  const { title, contents } = req.body;
+
+  if (title && contents) {
+    const foundPost = await getPostById(req.params.id);
+    if (foundPost.length > 0) {
+      try {
+        const updatedPost = await Posts.update(req.params.id, { title, contents });
+        let foundUpdatedPost;
+        if (updatedPost) foundUpdatedPost = await getPostById(req.params.id);
+        res.status(200).json(foundUpdatedPost);
+      } catch {
+        res.status(500).json({
+            errorMessage: "The post information could not be modified."
+          });
+      }
+    } else {
+      res.status(404).json({
+        errorMessage: "The post with the specified ID does not exist."
+      });
+    }
+  } else {
+    res.status(400).json({
+      errorMessage: "Please provide title and contents for the post."
+    });
+  }
 });
 
 // HELPERS
